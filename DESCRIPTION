@@ -1,0 +1,27 @@
+Package: taldi
+Type: Package
+Title: Teaching Algorithmic Differentiation
+Version: 0.1.0
+Authors@R: c(
+    person(given = "Mikkel Meyer", family = "Andersen",
+        email = "mikl@math.aau.dk", role = c("aut", "cre", "cph")),
+    person(given = "Søren", family = "Højsgaard",
+        email = "sorenh@math.aau.dk", role = c("aut", "cph"))
+  )
+Maintainer: Mikkel Meyer Andersen <mikl@math.aau.dk>
+Description: Tools to help teach Algorithmic Differentiation (AD), 
+  including forward and reverse mode.
+Depends: 
+  R (>= 4.0.0), 
+  igraph
+Imports:
+  rlang
+Suggests:
+  ggraph, 
+  tidygraph
+License: GPL
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE, roclets = c("rd", "collate", "namespace"))
+RoxygenNote: 7.1.2
+VignetteBuilder: knitr

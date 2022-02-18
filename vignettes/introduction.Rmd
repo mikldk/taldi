@@ -1,0 +1,71 @@
+---
+title: "Introduction"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{introduction}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r, echo=FALSE}
+has_ggraph <- FALSE
+
+if (require(ggraph, quietly = TRUE) && require(tidygraph, quietly = TRUE)) {
+  has_ggraph <- TRUE
+}
+```
+
+
+```{r setup}
+library(taldi)
+```
+
+# Infering abstract syntex tree
+
+```{r}
+e <- quote(cos(2*x1 + x2))
+symlist <- infer_ast(e)
+str(symlist, 2)
+```
+
+# Construct directed acyclic graph
+
+```{r, fig.width=6, fig.height=4}
+g <- make_dag(symlist)
+plot(g)
+```
+
+## Find leaves
+
+```{r}
+is_leaf <- sapply(V(g), function(x) {
+  length(neighbors(g, x)) == 0L
+})
+V(g)[is_leaf]
+leaves_labels <- get.vertex.attribute(g, "label",  V(g)[is_leaf])
+leaves_types <- get.vertex.attribute(g, "type",  V(g)[is_leaf])
+cbind(leaves_labels, leaves_types)
+```
+
+# Plot using `ggraph` and `tidygraph`
+
+```{r, fig.width=6, fig.height=4, eval = has_ggraph}
+tg <- as_tbl_graph(g)
+l <- create_layout(tg, layout = "sugiyama")
+
+ggraph(l) + 
+  geom_edge_link(arrow = arrow(length = unit(0.5, 'cm')), end_cap = circle(0.5, 'cm')) + 
+  geom_node_circle(aes(r = 0.1, fill = type)) + 
+  geom_node_text(aes(label = label)) + 
+  labs(fill = NULL) + 
+  theme_bw() + 
+  theme_graph()
+```
+
