@@ -16,6 +16,12 @@
 #'
 #' @export
 infer_ast <- function(x) {
+  res <- infer_ast_worker(x)
+  class(res) <- "taldi_AST"
+  return(res)
+}
+
+infer_ast_worker <- function(x) {
   if (is.character(x)) {
     x <- parse(text = x)[[1L]]
   }
@@ -54,5 +60,5 @@ infer_ast <- function(x) {
     }
   }
 
-  return(lapply(x, infer_ast))
+  return(lapply(x, infer_ast_worker))
 }

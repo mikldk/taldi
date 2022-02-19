@@ -4,13 +4,22 @@
 \alias{make_dag}
 \title{Convert abstract syntax tree to directed acyclic graph}
 \usage{
-make_dag(
-  x,
-  graph = igraph::make_empty_graph(directed = TRUE),
-  ancestor_id = NULL,
-  env = new.env(parent = emptyenv())
-)
+make_dag(x)
+}
+\arguments{
+\item{x}{Abstract syntax tree from \code{\link[=infer_ast]{infer_ast()}}}
 }
 \description{
 Convert abstract syntax tree to directed acyclic graph
+}
+\examples{
+e <- quote(cos(2*x1 + x2))
+ast <- infer_ast(e)
+g <- make_dag(ast)
+g
+
+if (interactive()) {
+  plot(g)
+}
+
 }

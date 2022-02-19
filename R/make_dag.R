@@ -1,9 +1,29 @@
 #' Convert abstract syntax tree to directed acyclic graph
 #'
+#' @param x Abstract syntax tree from [infer_ast()]
+#'
+#' @examples
+#' e <- quote(cos(2*x1 + x2))
+#' ast <- infer_ast(e)
+#' g <- make_dag(ast)
+#' g
+#'
+#' if (interactive()) {
+#'   plot(g)
+#' }
+#'
 #' @importFrom igraph make_empty_graph vertex edge
 #'
 #' @export
-make_dag <- function(x,
+make_dag <- function(x) {
+  stopifnot(inherits(x, "taldi_AST"))
+
+  res <- make_dag_worker(x)
+
+  return(res)
+}
+
+make_dag_worker <- function(x,
                      graph = igraph::make_empty_graph(directed = TRUE),
                      ancestor_id = NULL,
                      env = new.env(parent = emptyenv())) {
@@ -36,15 +56,16 @@ make_dag <- function(x,
   if (is.null(ancestor_id)) {
     stop("Unexpected")
   }
+
   e <- igraph::edge(ancestor_id, id)
   graph <- graph + e
 
   if (length(x) >= 1L) {
     for (s in x[-1L]) {
-      graph <- make_dag(x = s,
-                        graph = graph,
-                        ancestor_id = id,
-                        env = env)
+      graph <- make_dag_worker(x = s,
+                               graph = graph,
+                               ancestor_id = id,
+                               env = env)
     }
   }
 

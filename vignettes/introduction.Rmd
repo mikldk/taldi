@@ -73,6 +73,24 @@ leaves_types <- get.vertex.attribute(g, "type",  V(g)[is_leaf])
 cbind(leaves_labels, leaves_types)
 ```
 
+## Traverse graph
+
+```{r}
+cbf <- function(graph, data, extra) {
+  print(data)
+  
+  v <- V(graph)[data["vid"]]
+  print(v)
+  cat("Visiting ", v$name, " (", v$label, ")\n")
+
+  FALSE
+}
+
+search_res <- bfs(g, root = 1L, neimode = "out", callback = cbf)
+search_res
+```
+
+
 # Plot using `ggraph` and `tidygraph`
 
 ```{r, fig.width=6, fig.height=4, eval = has_ggraph}

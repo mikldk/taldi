@@ -4,12 +4,10 @@ Title: Teaching Algorithmic Differentiation
 Version: 0.1.0
 Authors@R: c(
     person(given = "Mikkel Meyer", family = "Andersen",
-        email = "mikl@math.aau.dk", role = c("aut", "cre", "cph")),
-    person(given = "Søren", family = "Højsgaard",
-        email = "sorenh@math.aau.dk", role = c("aut", "cph"))
+        email = "mikl@math.aau.dk", role = c("aut", "cre", "cph"))
   )
 Maintainer: Mikkel Meyer Andersen <mikl@math.aau.dk>
-Description: Tools to help teach Algorithmic Differentiation (AD), 
+Description: Tools to help teach algorithmic differentiation (AD), 
   including forward and reverse mode.
 Depends: 
   R (>= 4.0.0), 
