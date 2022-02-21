@@ -3,8 +3,7 @@
 #' @param x Abstract syntax tree from [infer_ast()]
 #'
 #' @examples
-#' e <- quote(cos(2*x1 + x2))
-#' ast <- infer_ast(e)
+#' ast <- infer_ast("cos(2*x1 + x2)")
 #' g <- make_dag(ast)
 #' g
 #'

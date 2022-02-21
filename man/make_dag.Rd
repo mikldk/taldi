@@ -13,8 +13,7 @@ make_dag(x)
 Convert abstract syntax tree to directed acyclic graph
 }
 \examples{
-e <- quote(cos(2*x1 + x2))
-ast <- infer_ast(e)
+ast <- infer_ast("cos(2*x1 + x2)")
 g <- make_dag(ast)
 g
 
