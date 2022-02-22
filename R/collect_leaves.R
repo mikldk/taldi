@@ -14,17 +14,17 @@
 #'   plot(dag2)
 #' }
 #'
-#' @importFrom igraph vertex edge get.vertex.attribute neighbors
+#' @importFrom igraph V vertex edge vertex_attr neighbors
 #' @export
 collect_leaves <- function(dag) {
 
-  is_symbol_leaf <- sapply(V(dag), function(x) {
+  is_symbol_leaf <- sapply(igraph::V(dag), function(x) {
     length(igraph::neighbors(dag, x, mode = "out")) == 0L &&
-      igraph::get.vertex.attribute(dag, "type",  x) == "symbol"
+      igraph::vertex_attr(dag, "type",  x) == "symbol"
   })
 
   idx <- which(is_symbol_leaf)
-  lbls <- igraph::get.vertex.attribute(dag, "label",  V(dag)[is_symbol_leaf])
+  lbls <- igraph::vertex_attr(dag, "label",  igraph::V(dag)[is_symbol_leaf])
 
   smbl_lst <- split(idx, lbls)
 
@@ -38,7 +38,7 @@ collect_leaves <- function(dag) {
     }
 
     #Take #1 as new node, let the rest merge to that
-    v <- V(dag)[ smb_i[1L] ]
+    v <- igraph::V(dag)[ smb_i[1L] ]
     v_pa <- igraph::neighbors(dag, v, mode = "in")
 
     # k in 2, 3, ...n

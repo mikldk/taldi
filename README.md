@@ -1,3 +1,3 @@
 # taldi
 
-Teaching Algorithmic Differentiation
+**T**eaching **AL**gorithmic **DI**fferentiation

@@ -2,7 +2,7 @@
 title: "Introduction"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{introduction}
+  %\VignetteIndexEntry{Introduction}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -14,36 +14,11 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r, echo=FALSE, message=FALSE}
-has_ggraph <- FALSE
-has_caracas <- FALSE
-
-if (require(ggraph, quietly = TRUE) && require(tidygraph, quietly = TRUE)) {
-  has_ggraph <- TRUE
-}
-
-if (require(caracas, quietly = TRUE)) {
-  has_caracas <- TRUE
-}
-
-inline_caracas_code <- function(x) {
-  x
-}
-
-inline_caracas_code <- function(x) {
-  deparse(substitute(x))
-}
-
-if (has_caracas) {
-  inline_caracas_code <- function(x) {
-    x
-  }
-}
-```
-
-
 ```{r setup}
 library(taldi)
+library(tidygraph)
+library(ggraph)
+library(caracas)
 ```
 
 # Summary
@@ -74,62 +49,72 @@ is_leaf <- sapply(V(dag), function(x) {
   length(neighbors(dag, x, mode = "out")) == 0L
 })
 V(dag)[is_leaf]
-leaves_labels <- get.vertex.attribute(dag, "label",  V(dag)[is_leaf])
-leaves_types <- get.vertex.attribute(dag, "type",  V(dag)[is_leaf])
+leaves_labels <- vertex_attr(dag, "label",  V(dag)[is_leaf])
+leaves_types <- vertex_attr(dag, "type",  V(dag)[is_leaf])
 cbind(leaves_labels, leaves_types)
-```
-
-## Traverse graph
-
-```{r}
-cbf <- function(graph, data, extra) {
-  print(data)
-  print(data["vid"])
-  print(str(data))
-  
-  v <- V(graph)[V(graph)$id == data["vid"]]
-  print(v)
-  #cat("Visiting ", v$name, " (", v$label, ")\n")
-
-  FALSE
-}
-
-search_res <- bfs(g, root = 1L, neimode = "out", callback = cbf)
-search_res
 ```
 
 
 # Plot using `ggraph` and `tidygraph`
 
-```{r, fig.width=6, fig.height=4, eval = has_ggraph}
-plot_dag <- function(g) {
-  tg <- as_tbl_graph(g)
-  l <- create_layout(tg, layout = "sugiyama")
-  
-  p <- ggraph(l) + 
-    geom_edge_link(arrow = arrow(length = unit(0.5, 'cm')), end_cap = circle(0.5, 'cm')) + 
-    geom_node_circle(aes(r = 0.1, fill = type)) + 
-    geom_node_text(aes(label = label)) + 
-    labs(fill = NULL) + 
-    theme_bw() + 
-    theme_graph()
-  
-  return(p)
-}
+```{r, fig.width=6, fig.height=4}
+tg <- as_tbl_graph(dag)
+l <- create_layout(tg, layout = "sugiyama")
 
-plot_dag(dag)
+p <- ggraph(l) + 
+  geom_edge_link(arrow = arrow(length = unit(0.5, 'cm')), end_cap = circle(0.5, 'cm')) + 
+  geom_node_circle(aes(r = 0.1, fill = type)) + 
+  geom_node_text(aes(label = label)) + 
+  labs(fill = NULL) + 
+  theme_bw() + 
+  theme_graph()
+
+print(p)  
 ```
+
+Or simply use the provided function, `ggdag()`:
+
+```{r, fig.width=6, fig.height=4}
+ggdag(dag)
+```
+
 
 # Collect symbol leaves
 
 ```{r}
 dag2 <- collect_leaves(dag)
-plot_dag(dag2)
+ggdag(dag2)
 ```
+
+
+
+# Complete example
+
+```{r}
+ast <- infer_ast("cos(2*x1 + x2) + x2^2")
+dag <- make_dag(ast)
+dag <- collect_leaves(dag)
+```
+
+```{r, fig.width=6, fig.height=4}
+ggdag(dag)
+```
+
+
+```{r}
+dag2 <- init_graph(dag)
+dag2 <- bind_literals(dag2)
+dag2 <- bind_symbols(dag2, values = list(x1 = 1, x2 = 2))
+```
+
+```{r, fig.width=6, fig.height=4}
+ggdag(dag2)
+```
+
 
 # Find derivative
 
-```{r, eval = has_caracas}
+```{r}
 f <- as_sym(deparse1(e))
 f
 dfdx1 <- der(f, "x1")
@@ -137,12 +122,12 @@ dfdx2 <- der(f, "x2")
 ```
 
 \begin{align}
-  f(x_1, x_2) &= `r inline_caracas_code(tex(f))` \\
-  \frac{\partial f}{\partial x_1} &= `r inline_caracas_code(tex(dfdx1))` \\
-  \frac{\partial f}{\partial x_2} &= `r inline_caracas_code(tex(dfdx2))`
+  f(x_1, x_2) &= `r tex(f)` \\
+  \frac{\partial f}{\partial x_1} &= `r tex(dfdx1)` \\
+  \frac{\partial f}{\partial x_2} &= `r tex(dfdx2)`
 \end{align}
 
-```{r, eval = has_caracas}
+```{r}
 val <- eval_to_symbol("UnevaluatedExpr(pi/2)")
 
 f_val_uneval <- subs_lst(f, list("x1" = val, "x2" = val))
@@ -162,14 +147,14 @@ dfdx2_val
 ```
 
 \begin{align}
-  f\left (`r inline_caracas_code(tex(val))`, `r inline_caracas_code(tex(val))` \right ) 
-    &= `r inline_caracas_code(tex(f_val_uneval))` 
-     = `r inline_caracas_code(tex(f_val))`  \\
-  \frac{\partial f}{\partial x_1} \Bigg \vert_{x_1 = x_2 = `r inline_caracas_code(tex(val))`}
-    &= `r inline_caracas_code(tex(dfdx1_val_uneval))` 
-     = `r inline_caracas_code(tex(dfdx1_val))`  \\
-  \frac{\partial f}{\partial x_2} \Bigg \vert_{x_1 = x_2 = `r inline_caracas_code(tex(val))`}
-    &= `r inline_caracas_code(tex(dfdx2_val_uneval))` 
-     = `r inline_caracas_code(tex(dfdx2_val))`
+  f\left (`r tex(val)`, `r tex(val)` \right ) 
+    &= `r tex(f_val_uneval)` 
+     = `r tex(f_val)`  \\
+  \frac{\partial f}{\partial x_1} \Bigg \vert_{x_1 = x_2 = `r tex(val)`}
+    &= `r tex(dfdx1_val_uneval)` 
+     = `r tex(dfdx1_val)`  \\
+  \frac{\partial f}{\partial x_2} \Bigg \vert_{x_1 = x_2 = `r tex(val)`}
+    &= `r tex(dfdx2_val_uneval)` 
+     = `r tex(dfdx2_val)`
 \end{align}
 

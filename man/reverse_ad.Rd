@@ -4,12 +4,12 @@
 \alias{reverse_ad}
 \title{Perform reverse algorithmic differentiation}
 \usage{
-reverse_ad(dag, symbols = NULL)
+reverse_ad(dag, values)
 }
 \arguments{
 \item{dag}{in which to perform reverse algorithmic differentiation}
 
-\item{symbols}{which symbols to differentiate with respect to (NULL means all)}
+\item{values}{a named list of symbols and their values}
 }
 \description{
 Perform reverse algorithmic differentiation
@@ -17,7 +17,7 @@ Perform reverse algorithmic differentiation
 \examples{
 ast <- infer_ast("cos(2*x1 + x2)")
 dag <- make_dag(ast)
-ad <- reverse_ad(dag)
-ad
+#ad <- reverse_ad(dag)
+#ad
 
 }

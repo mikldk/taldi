@@ -1,25 +1,36 @@
-stopifnot_ggraph_tidygraph <- function() {
-  if (!require(ggraph, quietly = TRUE) || !require(tidygraph, quietly = TRUE)) {
-    stop("Expected ggraph and tidygraph")
-  }
-}
-
-# For internal use
-.plot_dag <- function(g, add_node_text = TRUE) {
-  stopifnot_ggraph_tidygraph()
-
-  tg <- tidygraph::as_tbl_graph(g)
+#' Plot DAG
+#'
+#' @param dag to plot
+#' @param add_node_text add text to nodes
+#'
+#' @importFrom tidygraph as_tbl_graph as_tibble
+#' @importFrom ggraph ggraph create_layout geom_edge_link geom_node_circle theme_graph circle geom_node_text
+#' @importFrom ggplot2 labs theme_bw arrow unit aes
+#' @importFrom rlang .data
+#'
+#' @export
+ggdag <- function(dag, add_node_text = TRUE) {
+  tg <- tidygraph::as_tbl_graph(dag)
   l <- ggraph::create_layout(tg, layout = "sugiyama")
 
   p <- ggraph::ggraph(l) +
-    ggraph::geom_edge_link(arrow = arrow(length = unit(0.5, 'cm')), end_cap = circle(0.5, 'cm')) +
-    ggraph::geom_node_circle(aes(r = 0.1, fill = type)) +
+    ggraph::geom_edge_link(arrow = ggplot2::arrow(length = ggplot2::unit(0.5, 'cm')), end_cap = ggraph::circle(0.5, 'cm')) +
+    ggraph::geom_node_circle(ggplot2::aes(r = 0.1, fill = .data$type)) +
     ggplot2::labs(fill = NULL) +
     ggplot2::theme_bw() +
     ggraph::theme_graph()
 
   if (add_node_text) {
-    p <- p + ggraph::geom_node_text(aes(label = label))
+    attr(tg, "active") <- "nodes"
+
+    cnms <- colnames(tidygraph::as_tibble(tg))
+    has_ad_value <- "_ad_value" %in% cnms
+
+    if (has_ad_value) {
+      p <- p + ggraph::geom_node_text(ggplot2::aes(label = paste0(.data$label, "=", .data$`_ad_value`)))
+    } else {
+      p <- p + ggraph::geom_node_text(ggplot2::aes(label = .data$label))
+    }
   }
 
   return(p)
@@ -31,12 +42,14 @@ stopifnot_ggraph_tidygraph <- function() {
 #'
 #' @param dag in which to get symbol leaves
 #'
+#' @importFrom igraph V neighbors vertex_attr
+#'
 #' @export
 get_symbols <- function(dag) {
-  is_symbol_leaf <- sapply(V(dag), function(x) {
+  is_symbol_leaf <- sapply(igraph::V(dag), function(x) {
     length(igraph::neighbors(dag, x, mode = "out")) == 0L &&
-      igraph::get.vertex.attribute(dag, "type",  x) == "symbol"
+      igraph::vertex_attr(dag, "type",  x) == "symbol"
   })
 
-  return(V(dag)[is_symbol_leaf])
+  return(igraph::V(dag)[is_symbol_leaf])
 }

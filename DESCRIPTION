@@ -10,17 +10,22 @@ Maintainer: Mikkel Meyer Andersen <mikl@math.aau.dk>
 Description: Tools to help teach algorithmic differentiation (AD), 
   including forward and reverse mode.
 Depends: 
-  R (>= 4.0.0), 
+  R (>= 4.0.0),
   igraph
 Imports:
-  rlang
-Suggests:
-  ggraph, 
+  rlang,
+  ggplot2,
+  ggraph,
   tidygraph,
   caracas
+Suggests:
+  testthat (>= 3.0.0),
+  knitr,
+  rmarkdown
 License: GPL
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE, roclets = c("rd", "collate", "namespace"))
 RoxygenNote: 7.1.2
 VignetteBuilder: knitr
+Config/testthat/edition: 3
