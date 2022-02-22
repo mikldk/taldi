@@ -3,6 +3,7 @@
 export(bind_literals)
 export(bind_symbols)
 export(collect_leaves)
+export(forward_computation)
 export(get_symbols)
 export(ggdag)
 export(infer_ast)

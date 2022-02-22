@@ -15,9 +15,10 @@ reverse_ad(dag, values)
 Perform reverse algorithmic differentiation
 }
 \examples{
-ast <- infer_ast("cos(2*x1 + x2)")
+ast <- infer_ast("cos(2*x1 + x2) + x2^2")
 dag <- make_dag(ast)
-#ad <- reverse_ad(dag)
-#ad
+dag2 <- collect_leaves(dag)
+dag2 <- reverse_ad(dag2, values = list(x1 = 1, x2 = 2))
+dag2
 
 }

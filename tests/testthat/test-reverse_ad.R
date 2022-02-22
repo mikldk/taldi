@@ -58,4 +58,20 @@ test_that("bind_symbols", {
   expect_true(!isTRUE(all(is.na(unlist(igraph::vertex_attr(dag2, "_ad_value"))))))
 })
 
+test_that("require_leaves_bound", {
+  ast <- infer_ast("cos(2*x1 + x2) + x2^2")
+  dag <- make_dag(ast)
+  dag2 <- dag
 
+  expect_error(require_leaves_bound(dag2))
+
+  dag2 <- collect_leaves(dag2)
+
+  expect_error(require_leaves_bound(dag2))
+
+  dag2 <- init_graph(dag2)
+  dag2 <- bind_symbols(dag2, values = list(x1 = 1, x2 = 2))
+  dag2 <- bind_literals(dag2)
+
+  expect_true(require_leaves_bound(dag2))
+})

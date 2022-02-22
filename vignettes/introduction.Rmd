@@ -87,8 +87,23 @@ ggdag(dag2)
 ```
 
 
-
 # Complete example
+
+```{r, fig.width=6, fig.height=4}
+ast <- infer_ast("cos(2*x1 + x2) + x2^2")
+dag <- make_dag(ast)
+dag <- collect_leaves(dag)
+dag2 <- reverse_ad(dag, values = list(x1 = 1, x2 = 2))
+ggdag(dag2)
+```
+
+# Low-level functions
+
+## Preparing
+
+* [init_graph()]
+* [bind_literals()]
+* [bind_symbols()]
 
 ```{r}
 ast <- infer_ast("cos(2*x1 + x2) + x2^2")
@@ -103,12 +118,50 @@ ggdag(dag)
 
 ```{r}
 dag2 <- init_graph(dag)
-dag2 <- bind_literals(dag2)
-dag2 <- bind_symbols(dag2, values = list(x1 = 1, x2 = 2))
 ```
 
 ```{r, fig.width=6, fig.height=4}
-ggdag(dag2)
+dag3 <- bind_literals(dag2)
+ggdag(dag3)
+```
+
+
+```{r, fig.width=6, fig.height=4}
+dag4 <- bind_symbols(dag2, values = list(x1 = 1, x2 = 2))
+ggdag(dag4)
+```
+
+
+```{r}
+dag5 <- bind_literals(dag2)
+dag5 <- bind_symbols(dag5, values = list(x1 = 1, x2 = 2))
+```
+
+```{r, fig.width=6, fig.height=4}
+ggdag(dag5)
+```
+
+
+```{r, fig.width=6, fig.height=4}
+dag5 <- forward_computation(dag5, values = list(x1 = 1, x2 = 2))
+ggdag(dag5)
+```
+
+
+## Forward computation
+
+```{r}
+e <- quote(cos(2*x1 + x2) + x2^2)
+vals <- list(x1 = 1, x2 = 2)
+eval(e, vals)
+ast <- infer_ast(e)
+dag <- make_dag(ast)
+dag <- collect_leaves(dag)
+dag <- forward_computation(dag, values = vals)
+```
+
+```{r, fig.width=6, fig.height=4}
+ggdag(dag)
 ```
 
 

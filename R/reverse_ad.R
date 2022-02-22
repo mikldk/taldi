@@ -13,6 +13,8 @@ require_unique_symbol_leaves <- function(dag) {
   return(TRUE)
 }
 
+
+
 # https://en.wikipedia.org/wiki/Differentiation_rules
 get_deriv <- function(op, args, args_deriv) {
   stopifnot(length(args) == length(args_deriv))
@@ -181,9 +183,162 @@ bind_symbols <- function(dag, values) {
   return(dag2)
 }
 
-forward_computation <- function(dag) {
 
+
+require_leaves_bound <- function(dag) {
+  require_graph_initiated(dag)
+
+  is_leaf <- get_leaves(dag)
+
+  vls <- igraph::vertex_attr(dag, "_ad_value")
+  vls_leaves <- unlist(vls[is_leaf])
+
+  if (any(is.na(vls_leaves))) {
+    stop("Some leaves were NA.")
+  }
+
+  if (!isTRUE(all(is.numeric(vls_leaves)))) {
+    stop("Not all leaves were numeric.")
+  }
+
+  if (any(is.infinite(vls_leaves))) {
+    stop("Some leaves were not finite.")
+  }
+
+  return(TRUE)
 }
+
+#' Performs the function calculation forwards in graph
+#'
+#' @param dag to perform calculations in
+#' @param values a named list of symbols and their values
+#'
+#' @examples
+#' ast <- infer_ast("cos(2*x1 + x2) + x2^2")
+#' dag <- make_dag(ast)
+#' dag <- collect_leaves(dag)
+#' dag <- forward_computation(dag, values = list(x1 = 1, x2 = 2))
+#' dag
+#'
+#' eval(expression(cos(2*x1 + x2) + x2^2), list(x1 = 1, x2 = 2))
+#'
+#' @importFrom igraph bfs set_vertex_attr neighbors V E
+#'
+#' @export
+forward_computation <- function(dag, values) {
+  require_unique_symbol_leaves(dag)
+
+  dag2 <- dag
+  dag2 <- init_graph(dag2)
+  dag2 <- bind_literals(dag2)
+  dag2 <- bind_symbols(dag2, values)
+
+  require_leaves_bound(dag2)
+
+  is_leaf <- get_leaves(dag2)
+  leaves <- igraph::V(dag2)[is_leaf]
+
+  # ggdag(dag2)
+  dag3 <- forward_computation_worker(dag2, leaves)
+  # ggdag(dag3)
+  dag3 <- fill_value_root(dag3)
+  # ggdag(dag3)
+
+  return(dag3)
+}
+
+fill_value_root <- function(dag) {
+  root <- igraph::V(dag)[1L]
+  child <- igraph::neighbors(dag, root, mode = "out")
+  stopifnot(length(child) == 1L)
+
+  child_val <- igraph::vertex_attr(dag, "_ad_value", index = child)[[1L]]
+
+  dag <- igraph::set_vertex_attr(dag, "_ad_value", index = root, value = child_val)
+
+  return(dag)
+}
+
+forward_computation_worker <- function(dag, nodes) {
+  if (is.null(nodes)) {
+    return(dag)
+  }
+
+  for (v in nodes) {
+    v_pa <- igraph::neighbors(dag, v, mode = "in")
+
+    for (u in v_pa) {
+      dag <- compute_node(dag, u)
+    }
+
+    dag <- forward_computation_worker(dag, v_pa)
+  }
+
+  return(dag)
+}
+
+compute_node <- function(dag, node) {
+  stopifnot(length(node) == 1L)
+
+  # Node already computed
+  if (!is.na(igraph::vertex_attr(dag, "_ad_value", index = node)[[1L]])) {
+    return(dag)
+  }
+
+  u_children <- igraph::neighbors(dag, node, mode = "out")
+  args <- nodes_to_numeric(dag, u_children)
+
+  op <- igraph::vertex_attr(dag, "label", node)
+
+  #cat("======================\n")
+  #print(args)
+  #print(node)
+  #print(op)
+  #cat("======================\n")
+  val <- do_calculation(op, args)
+  dag <- igraph::set_vertex_attr(dag, "_ad_value", index = node, value = val)
+
+  return(dag)
+}
+
+nodes_to_numeric <- function(dag, nodes) {
+  unlist(igraph::vertex_attr(dag, "_ad_value", index = nodes))
+}
+
+do_calculation <- function(op, args) {
+  # Simple + - * /
+  if (op == "+") {
+    stopifnot(length(args) == 2L)
+    return(args[1L] + args[2L])
+  } else if (op == "-") {
+    stopifnot(length(args) == 2L)
+    return(args[1L] - args[2L])
+  } else if (op == "*") {
+    stopifnot(length(args) == 2L)
+    return(args[1L] * args[2L])
+  } else if (op == "/") {
+    stopifnot(length(args) == 2L)
+    return(args[1L] * args[2L])
+  } else if (op == "^") {
+    stopifnot(length(args) == 2L)
+    return(args[1L]^args[2L])
+  }
+
+  # Unary trigonometry functions
+  else if (op == "cos") {
+    stopifnot(length(args) == 1L)
+    return(cos(args[1L]))
+  } else if (op == "sin") {
+    stopifnot(length(args) == 1L)
+    return(sin(args[1L]))
+  }
+
+  return(NA)
+}
+
+
+
+
 
 #' Perform reverse algorithmic differentiation
 #'
@@ -191,10 +346,11 @@ forward_computation <- function(dag) {
 #' @param values a named list of symbols and their values
 #'
 #' @examples
-#' ast <- infer_ast("cos(2*x1 + x2)")
+#' ast <- infer_ast("cos(2*x1 + x2) + x2^2")
 #' dag <- make_dag(ast)
-#' #ad <- reverse_ad(dag)
-#' #ad
+#' dag2 <- collect_leaves(dag)
+#' dag2 <- reverse_ad(dag2, values = list(x1 = 1, x2 = 2))
+#' dag2
 #'
 #' @importFrom igraph bfs set_vertex_attr neighbors V E
 #'
@@ -207,10 +363,11 @@ reverse_ad <- function(dag, values) {
 
   require_unique_symbol_leaves(dag)
 
+
   dag2 <- dag
-  dag2 <- init_graph(dag2)
-  dag2 <- bind_literals(dag2)
-  dag2 <- bind_symbols(dag2, values)
+
+  # includes init and binding
+  dag2 <- forward_computation(dag, values)
 
   # if (is.null(symbols)) {
   #   symbols <- get_symbols(dag)
@@ -259,4 +416,5 @@ reverse_ad <- function(dag, values) {
   # search_res <- igraph::bfs(dag_ad, root = 1L, neimode = "out", callback = cbf)
   # search_res
 
+  return(dag2)
 }

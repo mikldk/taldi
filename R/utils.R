@@ -11,6 +11,22 @@
 #' @export
 ggdag <- function(dag, add_node_text = TRUE) {
   tg <- tidygraph::as_tbl_graph(dag)
+
+  has_ad_value <- FALSE
+
+  if (add_node_text) {
+    attr(tg, "active") <- "nodes"
+    cnms <- colnames(tidygraph::as_tibble(tg))
+    has_ad_value <- "_ad_value" %in% cnms
+
+    if (has_ad_value) {
+      tg <- tidygraph::mutate(tg, `_ad_value` = unlist(`_ad_value`))
+
+      #tg <- tidygraph::mutate(tg, `_ad_value_pretty` = round(`_ad_value`, 2))
+      #tg <- tidygraph::mutate(tg, `_ad_value_pretty` = lapply(`_ad_value`, formatC))
+    }
+  }
+
   l <- ggraph::create_layout(tg, layout = "sugiyama")
 
   p <- ggraph::ggraph(l) +
@@ -21,13 +37,10 @@ ggdag <- function(dag, add_node_text = TRUE) {
     ggraph::theme_graph()
 
   if (add_node_text) {
-    attr(tg, "active") <- "nodes"
-
-    cnms <- colnames(tidygraph::as_tibble(tg))
-    has_ad_value <- "_ad_value" %in% cnms
-
     if (has_ad_value) {
-      p <- p + ggraph::geom_node_text(ggplot2::aes(label = paste0(.data$label, "=", .data$`_ad_value`)))
+      #p <- p + ggraph::geom_node_text(ggplot2::aes(label = paste0(.data$label, "=", .data$`_ad_value`)))
+      p <- p + ggraph::geom_node_text(ggplot2::aes(label = paste0(.data$label, "=", lapply(.data$`_ad_value`, formatC))))
+      #p <- p + ggraph::geom_node_text(ggplot2::aes(label = paste0(.data$label, "=", lapply(.data$`_ad_value_pretty`, formatC))))
     } else {
       p <- p + ggraph::geom_node_text(ggplot2::aes(label = .data$label))
     }
@@ -52,4 +65,15 @@ get_symbols <- function(dag) {
   })
 
   return(igraph::V(dag)[is_symbol_leaf])
+}
+
+
+
+
+get_leaves <- function(dag) {
+  is_leaf <- sapply(igraph::V(dag), function(x) {
+    length(igraph::neighbors(dag, x, mode = "out")) == 0L
+  })
+
+  return(is_leaf)
 }
