@@ -10,14 +10,15 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  message = FALSE,
+  fig.width=7, 
+  fig.height=6
 )
 ```
 
 ```{r setup}
 library(taldi)
-library(tidygraph)
-library(ggraph)
 library(caracas)
 ```
 
@@ -26,6 +27,9 @@ library(caracas)
 1. `infer_ast()`: infer abstract syntex tree
 2. `make_dag()`: construct directed acyclic graph
 3. (`collect_leaves()`: Collect symbol leaves)
+4. Compute
+  * `forward_computation()`
+  * `reverse_ad()`
 
 # Infering abstract syntex tree
 
@@ -35,51 +39,21 @@ symlist <- infer_ast(e)
 str(symlist, 2)
 ```
 
-# Construct directed acyclic graph
-
-```{r, fig.width=6, fig.height=4}
-dag <- make_dag(symlist)
-plot(dag)
-```
-
-## Find leaves
+Construct directed acyclic graph (DAG):
 
 ```{r}
-is_leaf <- sapply(V(dag), function(x) {
-  length(neighbors(dag, x, mode = "out")) == 0L
-})
-V(dag)[is_leaf]
-leaves_labels <- vertex_attr(dag, "label",  V(dag)[is_leaf])
-leaves_types <- vertex_attr(dag, "type",  V(dag)[is_leaf])
-cbind(leaves_labels, leaves_types)
+dag <- make_dag(symlist)
+
 ```
 
+Plot DAG:
 
-# Plot using `ggraph` and `tidygraph`
-
-```{r, fig.width=6, fig.height=4}
-tg <- as_tbl_graph(dag)
-l <- create_layout(tg, layout = "sugiyama")
-
-p <- ggraph(l) + 
-  geom_edge_link(arrow = arrow(length = unit(0.5, 'cm')), end_cap = circle(0.5, 'cm')) + 
-  geom_node_circle(aes(r = 0.1, fill = type)) + 
-  geom_node_text(aes(label = label)) + 
-  labs(fill = NULL) + 
-  theme_bw() + 
-  theme_graph()
-
-print(p)  
-```
-
-Or simply use the provided function, `ggdag()`:
-
-```{r, fig.width=6, fig.height=4}
+```{r}
 ggdag(dag)
 ```
 
 
-# Collect symbol leaves
+Collect symbol leaves (such that each symbol only occurs once):
 
 ```{r}
 dag2 <- collect_leaves(dag)
@@ -87,89 +61,50 @@ ggdag(dag2)
 ```
 
 
-# Complete example
+# Evaluating function in point
 
-```{r, fig.width=6, fig.height=4}
-ast <- infer_ast("cos(2*x1 + x2) + x2^2")
-dag <- make_dag(ast)
-dag <- collect_leaves(dag)
-dag2 <- reverse_ad(dag, values = list(x1 = 1, x2 = 2))
-ggdag(dag2)
-```
-
-# Low-level functions
-
-## Preparing
-
-* [init_graph()]
-* [bind_literals()]
-* [bind_symbols()]
-
-```{r}
-ast <- infer_ast("cos(2*x1 + x2) + x2^2")
-dag <- make_dag(ast)
-dag <- collect_leaves(dag)
-```
-
-```{r, fig.width=6, fig.height=4}
-ggdag(dag)
-```
-
-
-```{r}
-dag2 <- init_graph(dag)
-```
-
-```{r, fig.width=6, fig.height=4}
-dag3 <- bind_literals(dag2)
-ggdag(dag3)
-```
-
-
-```{r, fig.width=6, fig.height=4}
-dag4 <- bind_symbols(dag2, values = list(x1 = 1, x2 = 2))
-ggdag(dag4)
-```
-
-
-```{r}
-dag5 <- bind_literals(dag2)
-dag5 <- bind_symbols(dag5, values = list(x1 = 1, x2 = 2))
-```
-
-```{r, fig.width=6, fig.height=4}
-ggdag(dag5)
-```
-
-
-```{r, fig.width=6, fig.height=4}
-dag5 <- forward_computation(dag5, values = list(x1 = 1, x2 = 2))
-ggdag(dag5)
-```
-
-
-## Forward computation
+Forward computation:
 
 ```{r}
 e <- quote(cos(2*x1 + x2) + x2^2)
 vals <- list(x1 = 1, x2 = 2)
-eval(e, vals)
 ast <- infer_ast(e)
 dag <- make_dag(ast)
 dag <- collect_leaves(dag)
 dag <- forward_computation(dag, values = vals)
 ```
 
-```{r, fig.width=6, fig.height=4}
+The value in the node is in the second line in each node:
+
+```{r}
 ggdag(dag)
 ```
 
-
-# Find derivative
+The numeric value can be extracted as follows:
 
 ```{r}
+root <- get_root(dag)
+get_ad_values(dag, root)
+eval(e, vals)
+```
+
+
+
+
+# Finding derivatives
+
+## Symbolically
+
+```{r}
+e <- quote(cos(2*x1 + x2) + x2^2)
+vals <- list(x1 = 1, x2 = 2)
+```
+
+Derivatives can be found symbolically using `caracas` (`R` code hidden here, please refer to the vignette source for details):
+
+```{r, echo = FALSE}
 f <- as_sym(deparse1(e))
-f
+#f
 dfdx1 <- der(f, "x1")
 dfdx2 <- der(f, "x2")
 ```
@@ -180,34 +115,145 @@ dfdx2 <- der(f, "x2")
   \frac{\partial f}{\partial x_2} &= `r tex(dfdx2)`
 \end{align}
 
-```{r}
-val <- eval_to_symbol("UnevaluatedExpr(pi/2)")
+And evaluated in the point $(x_1, x_2) = (`r vals["x1"]`, `r vals["x2"]`)$:
 
-f_val_uneval <- subs_lst(f, list("x1" = val, "x2" = val))
-f_val_uneval
+```{r, echo = FALSE}
+#val <- eval_to_symbol("UnevaluatedExpr(pi/2)")
+#val1 <- eval_to_symbol("UnevaluatedExpr(1)")
+#val2 <- eval_to_symbol("UnevaluatedExpr(2)")
+val1 <- eval_to_symbol(paste0("UnevaluatedExpr(", vals[1L], ")"))
+val2 <- eval_to_symbol(paste0("UnevaluatedExpr(", vals[2L], ")"))
+
+f_val_uneval <- subs_lst(f, list("x1" = val1, "x2" = val2))
+#f_val_uneval
 f_val <- doit(f_val_uneval)
-f_val
+#f_val
 
-dfdx1_val_uneval <- subs_lst(dfdx1, list("x1" = val, "x2" = val))
-dfdx1_val_uneval
+dfdx1_val_uneval <- subs_lst(dfdx1, list("x1" = val1, "x2" = val2))
+#dfdx1_val_uneval
 dfdx1_val <- doit(dfdx1_val_uneval)
-dfdx1_val
+#dfdx1_val
 
-dfdx2_val_uneval <- subs_lst(dfdx2, list("x1" = val, "x2" = val))
-dfdx2_val_uneval
+dfdx2_val_uneval <- subs_lst(dfdx2, list("x1" = val1, "x2" = val2))
+#dfdx2_val_uneval
 dfdx2_val <- doit(dfdx2_val_uneval)
-dfdx2_val
+#dfdx2_val
 ```
 
 \begin{align}
-  f\left (`r tex(val)`, `r tex(val)` \right ) 
+  f\left (`r tex(val1)`, `r tex(val2)` \right ) 
     &= `r tex(f_val_uneval)` 
-     = `r tex(f_val)`  \\
-  \frac{\partial f}{\partial x_1} \Bigg \vert_{x_1 = x_2 = `r tex(val)`}
+     = `r tex(f_val)` 
+     \approx `r N(f_val, 5)`\\
+  \frac{\partial f}{\partial x_1} \Bigg \vert_{x_1 = x_2 = `r tex(val1)`}
     &= `r tex(dfdx1_val_uneval)` 
-     = `r tex(dfdx1_val)`  \\
-  \frac{\partial f}{\partial x_2} \Bigg \vert_{x_1 = x_2 = `r tex(val)`}
+     = `r tex(dfdx1_val)` 
+     \approx `r N(dfdx1_val, 5)` \\
+  \frac{\partial f}{\partial x_2} \Bigg \vert_{x_1 = x_2 = `r tex(val2)`}
     &= `r tex(dfdx2_val_uneval)` 
-     = `r tex(dfdx2_val)`
+     = `r tex(dfdx2_val)` 
+     \approx `r N(dfdx2_val, 5)` 
 \end{align}
+
+## Reverse algorithmic differentiation (AD)
+
+Using reverse algorithmic differentiation (AD):
+
+```{r}
+ast <- infer_ast(e)
+dag <- make_dag(ast)
+dag <- collect_leaves(dag)
+dag <- reverse_ad(dag, values = vals)
+ggdag(dag)
+```
+
+
+# Advanced 
+
+## Find leaves
+
+```{r}
+is_leaf <- sapply(V(dag), function(x) {
+  length(neighbors(dag, x, mode = "out")) == 0L
+})
+V(dag)[is_leaf]
+leaves_labels <- vertex_attr(dag, "label", V(dag)[is_leaf])
+leaves_types <- vertex_attr(dag, "type", V(dag)[is_leaf])
+cbind(leaves_labels, leaves_types)
+```
+
+
+
+## Preparing
+
+* `init_graph()`
+* `bind_literals()`
+* `bind_symbols()`
+
+```{r}
+ast <- infer_ast("cos(2*x1 + x2) + x2^2")
+dag <- make_dag(ast)
+dag <- collect_leaves(dag)
+```
+
+Init all node values to `NA`:
+
+```{r}
+dag2 <- init_graph(dag)
+ggdag(dag2)
+```
+
+Bind literals:
+
+```{r}
+dag3 <- bind_literals(dag2)
+ggdag(dag3)
+```
+
+Bind symbols:
+
+```{r}
+dag4 <- bind_symbols(dag2, values = list(x1 = 1, x2 = 2))
+ggdag(dag4)
+```
+
+Bind both literals and symbols:
+
+```{r}
+dag5 <- bind_literals(dag2)
+dag5 <- bind_symbols(dag5, values = list(x1 = 1, x2 = 2))
+ggdag(dag5)
+```
+
+
+
+## Plot using `ggraph` and `tidygraph`
+
+
+```{r}
+library(tidygraph)
+library(ggraph)
+```
+
+```{r}
+ast <- infer_ast("cos(2*x1 + x2) + x2^2")
+dag <- make_dag(ast)
+dag <- collect_leaves(dag)
+
+tg <- as_tbl_graph(dag)
+l <- create_layout(tg, layout = "sugiyama")
+
+p <- ggraph(l) + 
+  geom_edge_link(arrow = arrow(length = unit(0.25, 'cm')), end_cap = circle(0.85, 'cm')) + 
+  geom_node_circle(aes(r = 0.3, fill = type)) + 
+  geom_node_text(aes(label = label)) + 
+  labs(fill = NULL) + 
+  theme_bw() + 
+  theme_graph()
+
+print(p)  
+```
+
+This is essentially how `ggdag()` is implemented.
+
 

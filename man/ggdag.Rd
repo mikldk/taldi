@@ -4,13 +4,41 @@
 \alias{ggdag}
 \title{Plot DAG}
 \usage{
-ggdag(dag, add_node_text = TRUE)
+ggdag(
+  dag,
+  add_node_text = TRUE,
+  r = 0.3,
+  arrow_size = ggplot2::unit(0.25, "cm"),
+  end_cap = ggraph::circle(0.85, "cm")
+)
 }
 \arguments{
 \item{dag}{to plot}
 
 \item{add_node_text}{add text to nodes}
+
+\item{r}{radius of nodes}
+
+\item{arrow_size}{size of arrows}
+
+\item{end_cap}{cap end to not hide arrow}
 }
 \description{
 Plot DAG
+}
+\examples{
+ast <- infer_ast("cos(2*x1 + x2) + x2^2")
+dag <- make_dag(ast)
+dag <- collect_leaves(dag)
+
+if (interactive()) {
+  ggdag(dag)
+}
+
+dag <- forward_computation(dag, values = list(x1 = 1, x2 = 2))
+
+if (interactive()) {
+  ggdag(dag)
+}
+
 }
