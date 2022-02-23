@@ -1,4 +1,4 @@
-test_that("get_ad_values", {
+test_that("get_values", {
   ast <- infer_ast("cos(2*x1 + x2) + x2^2")
   dag <- make_dag(ast)
   dag <- collect_leaves(dag)
@@ -8,7 +8,7 @@ test_that("get_ad_values", {
 
   v <- igraph::V(dag)[igraph::vertex_attr(dag, "label") == "x2"]
 
-  expect_equal(2.2, get_ad_values(dag, v))
+  expect_equal(2.2, get_values(dag, v))
 })
 
 test_that("do_calculation", {
@@ -42,7 +42,7 @@ test_that("forward_computation", {
   v1 <- eval(e, vals)
 
   root <- get_root(dag)
-  v2 <- get_ad_values(dag, root)
+  v2 <- get_values(dag, root)
 
   expect_equal(v1, v2)
 })

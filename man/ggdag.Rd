@@ -7,9 +7,15 @@
 ggdag(
   dag,
   add_node_text = TRUE,
+  add_value = FALSE,
+  add_deriv = FALSE,
   r = 0.3,
   arrow_size = ggplot2::unit(0.25, "cm"),
-  end_cap = ggraph::circle(0.85, "cm")
+  end_cap = ggraph::circle(0.85, "cm"),
+  lineheight = 0.85,
+  value_prefix = "v = ",
+  deriv_prefix = "d = ",
+  format_args = list()
 )
 }
 \arguments{
@@ -17,11 +23,23 @@ ggdag(
 
 \item{add_node_text}{add text to nodes}
 
+\item{add_value}{add the value to node text}
+
+\item{add_deriv}{add the derivative to node text}
+
 \item{r}{radius of nodes}
 
 \item{arrow_size}{size of arrows}
 
 \item{end_cap}{cap end to not hide arrow}
+
+\item{lineheight}{of node text}
+
+\item{value_prefix}{Prefix when printing AD value}
+
+\item{deriv_prefix}{Prefix when printing AD derivate}
+
+\item{format_args}{Passed on to \code{formatC} as dots}
 }
 \description{
 Plot DAG
@@ -39,6 +57,9 @@ dag <- forward_computation(dag, values = list(x1 = 1, x2 = 2))
 
 if (interactive()) {
   ggdag(dag)
+  ggdag(dag, add_value = TRUE)
+  ggdag(dag, add_value = TRUE, add_deriv = TRUE)
+  ggdag(dag, add_value = TRUE, add_deriv = TRUE, format_args = list(digits = 2))
 }
 
 }

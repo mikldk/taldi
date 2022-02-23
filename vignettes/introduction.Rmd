@@ -12,8 +12,8 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   message = FALSE,
-  fig.width=7, 
-  fig.height=6
+  fig.width = 7, 
+  fig.height = 7
 )
 ```
 
@@ -43,7 +43,6 @@ Construct directed acyclic graph (DAG):
 
 ```{r}
 dag <- make_dag(symlist)
-
 ```
 
 Plot DAG:
@@ -74,17 +73,17 @@ dag <- collect_leaves(dag)
 dag <- forward_computation(dag, values = vals)
 ```
 
-The value in the node is in the second line in each node:
+The value in the node is in the second line (prefixed by `d = `, which can be changed by the `value_prefix` argument) - note that `add_value` must be set to `TRUE`:
 
 ```{r}
-ggdag(dag)
+ggdag(dag, add_value = TRUE)
 ```
 
 The numeric value can be extracted as follows:
 
 ```{r}
 root <- get_root(dag)
-get_ad_values(dag, root)
+get_values(dag, root)
 eval(e, vals)
 ```
 
@@ -164,9 +163,10 @@ ast <- infer_ast(e)
 dag <- make_dag(ast)
 dag <- collect_leaves(dag)
 dag <- reverse_ad(dag, values = vals)
-ggdag(dag)
+ggdag(dag, add_value = TRUE, add_deriv = TRUE)
 ```
 
+Note that the value is the second line and the derivative the third line.
 
 # Advanced 
 
@@ -200,21 +200,21 @@ Init all node values to `NA`:
 
 ```{r}
 dag2 <- init_graph(dag)
-ggdag(dag2)
+ggdag(dag2, add_value = TRUE)
 ```
 
 Bind literals:
 
 ```{r}
 dag3 <- bind_literals(dag2)
-ggdag(dag3)
+ggdag(dag3, add_value = TRUE)
 ```
 
 Bind symbols:
 
 ```{r}
 dag4 <- bind_symbols(dag2, values = list(x1 = 1, x2 = 2))
-ggdag(dag4)
+ggdag(dag4, add_value = TRUE)
 ```
 
 Bind both literals and symbols:
@@ -222,7 +222,7 @@ Bind both literals and symbols:
 ```{r}
 dag5 <- bind_literals(dag2)
 dag5 <- bind_symbols(dag5, values = list(x1 = 1, x2 = 2))
-ggdag(dag5)
+ggdag(dag5, add_value = TRUE)
 ```
 
 

@@ -44,7 +44,7 @@ test_that("init_graph", {
   dag <- collect_leaves(dag)
   dag <- init_graph(dag)
 
-  vls <- igraph::vertex_attr(dag, "_ad_value")
+  vls <- igraph::vertex_attr(dag, "_value")
   expect_true(isTRUE(all(is.na(vls))))
 })
 
@@ -62,7 +62,7 @@ test_that("bind_literals", {
   dag2 <- bind_literals(dag)
   #ggdag(dag2)
 
-  expect_true(!isTRUE(all(is.na(unlist(igraph::vertex_attr(dag2, "_ad_value"))))))
+  expect_true(!isTRUE(all(is.na(unlist(igraph::vertex_attr(dag2, "_value"))))))
 })
 
 test_that("bind_symbols", {
@@ -82,6 +82,6 @@ test_that("bind_symbols", {
   dag2 <- bind_symbols(dag, values = list(x1 = 1, x2 = 2))
   #ggdag(dag2)
 
-  expect_true(!isTRUE(all(is.na(unlist(igraph::vertex_attr(dag2, "_ad_value"))))))
+  expect_true(!isTRUE(all(is.na(unlist(igraph::vertex_attr(dag2, "_value"))))))
 })
 

@@ -13,8 +13,9 @@ require_unique_symbol_leaves <- function(dag) {
   return(TRUE)
 }
 
+# By contract only checks _value (and not also _ad_deriv)
 require_graph_initiated <- function(dag) {
-  vls <- igraph::vertex_attr(dag, "_ad_value")
+  vls <- igraph::vertex_attr(dag, "_value")
 
   if (is.null(vls)) {
     stop("DAG not yet initiated, use init_graph()")
@@ -23,12 +24,13 @@ require_graph_initiated <- function(dag) {
   return(TRUE)
 }
 
+# By contract only checks _value (and not also _ad_deriv)
 require_leaves_bound <- function(dag) {
   require_graph_initiated(dag)
 
   is_leaf <- get_leaves(dag)
 
-  vls <- igraph::vertex_attr(dag, "_ad_value")
+  vls <- igraph::vertex_attr(dag, "_value")
   vls_leaves <- unlist(vls[is_leaf])
 
   if (any(is.na(vls_leaves))) {
@@ -53,12 +55,11 @@ require_leaves_bound <- function(dag) {
 #'
 #' @export
 init_graph <- function(dag) {
-  #dag2 <- igraph::set_vertex_attr(dag, "_ad_value", value = NA)
-
   dag2 <- dag
 
   for (v in V(dag2)) {
-    dag2 <- igraph::set_vertex_attr(dag2, "_ad_value", index = v, value = NA)
+    dag2 <- igraph::set_vertex_attr(dag2, "_value", index = v, value = NA)
+    dag2 <- igraph::set_vertex_attr(dag2, "_ad_deriv", index = v, value = NA)
   }
 
   return(dag2)
@@ -103,7 +104,7 @@ bind_literals <- function(dag) {
     }
 
     lbl <- igraph::vertex_attr(dag2, "label", index = v)
-    dag2 <- igraph::set_vertex_attr(dag2, "_ad_value", index = v, value = as.numeric(lbl))
+    dag2 <- igraph::set_vertex_attr(dag2, "_value", index = v, value = as.numeric(lbl))
   }
 
   return(dag2)
@@ -164,7 +165,7 @@ bind_symbols <- function(dag, values) {
       stop("The symbol '", lbl, "' was not expected to have multiple values")
     }
 
-    dag2 <- igraph::set_vertex_attr(dag2, "_ad_value", index = v, value = values[idx])
+    dag2 <- igraph::set_vertex_attr(dag2, "_value", index = v, value = values[idx])
   }
 
   return(dag2)

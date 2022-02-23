@@ -6,8 +6,8 @@
 #' @importFrom igraph vertex_attr
 #'
 #' @export
-get_ad_values <- function(dag, nodes) {
-  unlist(igraph::vertex_attr(dag, "_ad_value", index = nodes))
+get_values <- function(dag, nodes) {
+  unlist(igraph::vertex_attr(dag, "_value", index = nodes))
 }
 
 do_calculation <- function(op, args) {
@@ -129,9 +129,9 @@ fill_value_root <- function(dag) {
   child <- igraph::neighbors(dag, root, mode = "out")
   stopifnot(length(child) == 1L)
 
-  child_val <- igraph::vertex_attr(dag, "_ad_value", index = child)[[1L]]
+  child_val <- igraph::vertex_attr(dag, "_value", index = child)[[1L]]
 
-  dag <- igraph::set_vertex_attr(dag, "_ad_value", index = root, value = child_val)
+  dag <- igraph::set_vertex_attr(dag, "_value", index = root, value = child_val)
 
   return(dag)
 }
@@ -158,17 +158,17 @@ compute_node <- function(dag, node) {
   stopifnot(length(node) == 1L)
 
   # Node already computed
-  if (!is.na(igraph::vertex_attr(dag, "_ad_value", index = node)[[1L]])) {
+  if (!is.na(igraph::vertex_attr(dag, "_value", index = node)[[1L]])) {
     return(dag)
   }
 
   u_children <- igraph::neighbors(dag, node, mode = "out")
-  args <- get_ad_values(dag, u_children)
+  args <- get_values(dag, u_children)
 
   op <- igraph::vertex_attr(dag, "label", node)
 
   val <- do_calculation(op, args)
-  dag <- igraph::set_vertex_attr(dag, "_ad_value", index = node, value = val)
+  dag <- igraph::set_vertex_attr(dag, "_value", index = node, value = val)
 
   return(dag)
 }
