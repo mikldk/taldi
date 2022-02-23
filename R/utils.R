@@ -43,9 +43,6 @@ ggdag <- function(dag, add_node_text = TRUE,
 
     if (has_ad_value) {
       tg <- tidygraph::mutate(tg, `_ad_value` = as.numeric(unlist(.data$`_ad_value`)))
-
-      #tg <- tidygraph::mutate(tg, `_ad_value_pretty` = round(`_ad_value`, 2))
-      #tg <- tidygraph::mutate(tg, `_ad_value_pretty` = lapply(`_ad_value`, formatC))
     }
   }
 
